@@ -28,6 +28,7 @@ library
       Data.AssocMap
       Graph
       Lib
+      PermutationMap
   other-modules:
       Paths_ladder
   autogen-modules:

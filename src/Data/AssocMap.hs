@@ -15,6 +15,7 @@ import Data.Maybe (fromMaybe, isJust)
 import Prelude hiding (lookup)
 
 newtype AssocMap k v = AssocMap [(k, v)]
+  deriving (Show)
 
 empty :: AssocMap k v
 empty = AssocMap []
