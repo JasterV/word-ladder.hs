@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
@@ -15,6 +16,7 @@ module Graph
     deleteEdges,
     deleteNode,
     deleteNodes,
+    bfsSearch,
   )
 where
 
@@ -74,25 +76,35 @@ type SearchState a = ([a], DiGraph a, DiGraph a)
 
 data SearchResult a = Unsuccessful | Success (DiGraph a)
 
-bfsSearch :: (Eq a) => DiGraph a -> a -> a -> Maybe [a]
-bfsSearch graph start end
+bfsSearch :: forall a. (Eq a) => DiGraph a -> a -> a -> Maybe [a]
+bfsSearch initialGraph start end
   | start == end = Just [start]
-  | otherwise = case bfsSearch' ([start], graph, empty) of
+  | otherwise = case bfsSearch' ([start], initialGraph, empty) of
       Unsuccessful -> Nothing
       Success preds -> Just (findSolution preds)
+  where
+    findSolution :: DiGraph a -> [a]
+    findSolution _graph = undefined
 
-bfsSearch' :: (Eq a) => SearchState a -> SearchResult a
-bfsSearch' (frontier, graph, preds) =
-  let -- Create a new graph with the frontier nodes removed
-      newGraph = deleteNodes frontier graph
-      neighboursMap =
-        -- Associate each node to its neighbours
-        L.map (\node -> (node, children node graph)) frontier
-          -- Filter the neighbours that are not present on the new graph (does not contain frontier)
-          & L.map (second $ L.filter (`M.member` newGraph))
+    bfsSearch' :: SearchState a -> SearchResult a
+    bfsSearch' ([], _, _) = Unsuccessful
+    bfsSearch' (frontier, graph, predecessors) =
+      let graph' =
+            -- Create a new graph with the frontier nodes removed
+            deleteNodes frontier graph
+          neighboursMap =
+            -- Associate each node to its neighbours
+            L.map (\node -> (node, children node graph)) frontier
+              -- Filter the neighbours that have already been visited
+              & L.map (second $ L.filter (`M.member` graph'))
 
-      predecessors = addPredecessors preds neighboursMap
-   in Unsuccessful
+          -- Add all the neighbours of each node as predecessors of the node
+          predecessors' = addMultiplePredecessors neighboursMap predecessors
 
-findSolution :: DiGraph a -> [a]
-findSolution _graph = []
+          -- Put together all the neighbours into the next frontier
+          frontier' = L.concatMap snd neighboursMap
+       in if end `L.elem` frontier'
+            then
+              Success predecessors
+            else
+              bfsSearch' (frontier', graph', predecessors')
