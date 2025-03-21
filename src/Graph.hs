@@ -3,6 +3,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Use map once" #-}
+
 module Graph
   ( DiGraph,
     hasNode,
@@ -84,7 +85,11 @@ bfsSearch initialGraph start end
       Success preds -> Just (findSolution preds)
   where
     findSolution :: DiGraph a -> [a]
-    findSolution _graph = undefined
+    findSolution predecessors = L.reverse (aux end)
+      where
+        aux node = case children node predecessors of
+          [] -> [node]
+          (x : _) -> node : aux x
 
     bfsSearch' :: SearchState a -> SearchResult a
     bfsSearch' ([], _, _) = Unsuccessful
