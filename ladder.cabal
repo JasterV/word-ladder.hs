@@ -28,7 +28,6 @@ library
       Data.AssocMap
       Graph
       Ladder
-      Lib
       PermutationMap
   other-modules:
       Paths_ladder
