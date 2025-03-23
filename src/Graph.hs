@@ -68,12 +68,6 @@ deleteEdge (node, child) = M.alter aux node
 deleteEdges :: (Eq a) => [(a, a)] -> DiGraph a -> DiGraph a
 deleteEdges edges graph = foldr deleteEdge graph edges
 
-addMultiplePredecessors :: (Eq a) => [(a, [a])] -> DiGraph a -> DiGraph a
-addMultiplePredecessors [] graph = graph
-addMultiplePredecessors ((node, childs) : xs) graph =
-  let edges = L.map (,node) childs
-   in addMultiplePredecessors xs (addEdges edges graph)
-
 type SearchState a = ([a], DiGraph a, DiGraph a)
 
 type SearchResult a = Maybe (DiGraph a)
@@ -89,6 +83,12 @@ bfsSearch initialGraph start end
         aux node = case children node predecessors of
           [] -> [node]
           (x : _) -> node : aux x
+
+    addMultiplePredecessors :: [(a, [a])] -> DiGraph a -> DiGraph a
+    addMultiplePredecessors [] graph = graph
+    addMultiplePredecessors ((node, childs) : xs) graph =
+      let edges = L.map (,node) childs
+       in addMultiplePredecessors xs (addEdges edges graph)
 
     bfsSearch' :: SearchState a -> SearchResult a
     bfsSearch' ([], _, _) = Nothing
@@ -109,7 +109,7 @@ bfsSearch initialGraph start end
           frontier' = L.concatMap snd neighboursMap
        in if end `L.elem` frontier'
             then
-              Just predecessors
+              Just predecessors'
             else
               bfsSearch' (frontier', graph', predecessors')
 
