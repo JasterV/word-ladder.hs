@@ -119,25 +119,24 @@ type DfsSearchResult a = Either (DiGraph a) (Path a)
 
 dfsSearch :: forall a. (Eq a) => DiGraph a -> a -> a -> Maybe (Path a)
 dfsSearch initialGraph start end =
-  case dfsSearch' initialGraph start [] of
+  case dfsSearch' initialGraph start of
     Right path -> Just path
     Left _ -> Nothing
   where
-    searchNeighbours :: [a] -> Path a -> DiGraph a -> DfsSearchResult a
-    searchNeighbours [] _ graph = Left graph
-    searchNeighbours (x : xs) path graph = case dfsSearch' graph x path of
-      -- If a path was found, just return it
-      Right path' -> Right path'
-      -- If no path was found, keep searching on the updated graph
-      Left graph' -> searchNeighbours xs path graph'
-
-    dfsSearch' :: DiGraph a -> a -> [a] -> DfsSearchResult a
-    dfsSearch' graph node path
-      | not (hasNode graph node) = Left graph -- If already visited
-      | node == end = Right path'
+    dfsSearch' :: DiGraph a -> a -> DfsSearchResult a
+    dfsSearch' graph node
+      | node == end = Right [node]
       | otherwise =
-          let neighbours = children node graph -- Get neighbouring nodes
-              graph' = deleteNode node graph -- Mark node as visited
-           in searchNeighbours neighbours path' graph'
-      where
-        path' = path ++ [node] -- New path
+          let graph' = deleteNode node graph -- Mark node as visited
+              neighbours = children node graph -- Get neighbouring nodes
+           in case searchNeighbours neighbours graph' of
+                Right path -> Right (node : path)
+                Left graph'' -> Left graph''
+
+    searchNeighbours :: [a] -> DiGraph a -> DfsSearchResult a
+    searchNeighbours [] graph = Left graph
+    searchNeighbours (x : xs) graph = case dfsSearch' graph x of
+      -- If a path was found, just return it
+      Right path -> Right path
+      -- If no path was found, keep searching on the updated graph
+      Left graph' -> searchNeighbours xs graph'
