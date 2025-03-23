@@ -11,35 +11,36 @@ module PermutationMap
   )
 where
 
-import qualified Data.AssocMap as M
-import Data.List (nub, sort)
+import qualified Data.ByteString as BS
+import qualified Data.HashMap.Lazy as M
+import Data.List (nub)
 import Data.Maybe (fromMaybe)
 import Prelude hiding (lookup)
 
-type PermutationMap = M.AssocMap String [String]
+type PermutationMap = M.HashMap BS.ByteString [BS.ByteString]
 
 empty :: PermutationMap
 empty = M.empty
 
-member :: String -> PermutationMap -> Bool
-member key = M.member (sort key)
+member :: BS.ByteString -> PermutationMap -> Bool
+member key = M.member (BS.sort key)
 
-alter :: (Maybe [String] -> Maybe [String]) -> String -> PermutationMap -> PermutationMap
-alter f key = M.alter f (sort key)
+alter :: (Maybe [BS.ByteString] -> Maybe [BS.ByteString]) -> BS.ByteString -> PermutationMap -> PermutationMap
+alter f key = M.alter f (BS.sort key)
 
-delete :: String -> PermutationMap -> PermutationMap
-delete key = M.delete (sort key)
+delete :: BS.ByteString -> PermutationMap -> PermutationMap
+delete key = M.delete (BS.sort key)
 
-insert :: String -> [String] -> PermutationMap -> PermutationMap
-insert key = M.insert (sort key)
+insert :: BS.ByteString -> [BS.ByteString] -> PermutationMap -> PermutationMap
+insert key = M.insert (BS.sort key)
 
-lookup :: String -> PermutationMap -> Maybe [String]
-lookup key = M.lookup (sort key)
+lookup :: BS.ByteString -> PermutationMap -> Maybe [BS.ByteString]
+lookup key = M.lookup (BS.sort key)
 
-findWithDefault :: [String] -> String -> PermutationMap -> [String]
+findWithDefault :: [BS.ByteString] -> BS.ByteString -> PermutationMap -> [BS.ByteString]
 findWithDefault defaultValue key pmap = fromMaybe defaultValue (PermutationMap.lookup key pmap)
 
-createPermutationMap :: [String] -> PermutationMap
+createPermutationMap :: [BS.ByteString] -> PermutationMap
 createPermutationMap = aux empty
   where
     aux permMap [] = permMap

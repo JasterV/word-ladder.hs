@@ -22,57 +22,58 @@ module Graph
   )
 where
 
-import qualified Data.AssocMap as M
 import Data.Bifunctor (second)
 import Data.Function ((&))
+import qualified Data.HashMap.Lazy as M
+import Data.Hashable (Hashable)
 import qualified Data.List as L
 
-type DiGraph a = M.AssocMap a [a]
+type DiGraph a = M.HashMap a [a]
 
 empty :: DiGraph a
 empty = M.empty
 
-hasNode :: (Eq a) => DiGraph a -> a -> Bool
+hasNode :: (Hashable a) => DiGraph a -> a -> Bool
 hasNode = flip M.member
 
-addNode :: (Eq a) => DiGraph a -> a -> DiGraph a
+addNode :: (Hashable a) => DiGraph a -> a -> DiGraph a
 addNode graph node = M.insert node [] graph
 
-addEdge :: (Eq a) => (a, a) -> DiGraph a -> DiGraph a
+addEdge :: (Hashable a) => (a, a) -> DiGraph a -> DiGraph a
 addEdge (node, child) = M.alter insertEdge node
   where
     insertEdge Nothing = Just [child]
     insertEdge (Just nodes) = Just $ L.nub (child : nodes)
 
-addEdges :: (Eq a) => [(a, a)] -> DiGraph a -> DiGraph a
+addEdges :: (Hashable a) => [(a, a)] -> DiGraph a -> DiGraph a
 addEdges edges graph = foldr addEdge graph edges
 
-buildDiGraph :: (Eq a) => [(a, [a])] -> DiGraph a
+buildDiGraph :: (Hashable a) => [(a, [a])] -> DiGraph a
 buildDiGraph = foldr (\(node, childs) -> M.insert node (L.nub childs)) M.empty
 
-children :: (Eq a) => a -> DiGraph a -> [a]
+children :: (Hashable a) => a -> DiGraph a -> [a]
 children = M.findWithDefault []
 
-deleteNode :: (Eq a) => a -> DiGraph a -> DiGraph a
+deleteNode :: (Hashable a) => a -> DiGraph a -> DiGraph a
 deleteNode = M.delete
 
-deleteNodes :: (Eq a) => [a] -> DiGraph a -> DiGraph a
+deleteNodes :: (Hashable a) => [a] -> DiGraph a -> DiGraph a
 deleteNodes nodes graph = foldr deleteNode graph nodes
 
-deleteEdge :: (Eq a) => (a, a) -> DiGraph a -> DiGraph a
+deleteEdge :: (Hashable a) => (a, a) -> DiGraph a -> DiGraph a
 deleteEdge (node, child) = M.alter aux node
   where
     aux Nothing = Nothing
     aux (Just nodes) = Just (L.delete child nodes)
 
-deleteEdges :: (Eq a) => [(a, a)] -> DiGraph a -> DiGraph a
+deleteEdges :: (Hashable a) => [(a, a)] -> DiGraph a -> DiGraph a
 deleteEdges edges graph = foldr deleteEdge graph edges
 
 type SearchState a = ([a], DiGraph a, DiGraph a)
 
 type SearchResult a = Maybe (DiGraph a)
 
-bfsSearch :: forall a. (Eq a) => DiGraph a -> a -> a -> Maybe [a]
+bfsSearch :: forall a. (Hashable a) => DiGraph a -> a -> a -> Maybe [a]
 bfsSearch initialGraph start end
   | start == end = Just [start]
   | otherwise = findSolution <$> bfsSearch' ([start], initialGraph, empty)
@@ -113,7 +114,7 @@ bfsSearch initialGraph start end
             else
               bfsSearch' (frontier', graph', predecessors')
 
-dfsSearch :: forall a. (Eq a) => DiGraph a -> a -> a -> Maybe [a]
+dfsSearch :: forall a. (Hashable a) => DiGraph a -> a -> a -> Maybe [a]
 dfsSearch initialGraph start end =
   case dfsSearch' initialGraph start of
     Right path -> Just path
