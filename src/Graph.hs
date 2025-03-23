@@ -113,17 +113,13 @@ bfsSearch initialGraph start end
             else
               bfsSearch' (frontier', graph', predecessors')
 
-type Path a = [a]
-
-type DfsSearchResult a = Either (DiGraph a) (Path a)
-
-dfsSearch :: forall a. (Eq a) => DiGraph a -> a -> a -> Maybe (Path a)
+dfsSearch :: forall a. (Eq a) => DiGraph a -> a -> a -> Maybe [a]
 dfsSearch initialGraph start end =
   case dfsSearch' initialGraph start of
     Right path -> Just path
     Left _ -> Nothing
   where
-    dfsSearch' :: DiGraph a -> a -> DfsSearchResult a
+    dfsSearch' :: DiGraph a -> a -> Either (DiGraph a) [a]
     dfsSearch' graph node
       | node == end = Right [node]
       | otherwise =
@@ -133,7 +129,7 @@ dfsSearch initialGraph start end =
                 Right path -> Right (node : path)
                 Left graph'' -> Left graph''
 
-    searchNeighbours :: [a] -> DiGraph a -> DfsSearchResult a
+    searchNeighbours :: [a] -> DiGraph a -> Either (DiGraph a) [a]
     searchNeighbours [] graph = Left graph
     searchNeighbours (x : xs) graph = case dfsSearch' graph x of
       -- If a path was found, just return it
