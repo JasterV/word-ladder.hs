@@ -18,6 +18,7 @@ module Graph
     deleteNode,
     deleteNodes,
     bfsSearch,
+    dfsSearch,
   )
 where
 
@@ -75,14 +76,12 @@ addMultiplePredecessors ((node, childs) : xs) graph =
 
 type SearchState a = ([a], DiGraph a, DiGraph a)
 
-data SearchResult a = Unsuccessful | Success (DiGraph a)
+type SearchResult a = Maybe (DiGraph a)
 
 bfsSearch :: forall a. (Eq a) => DiGraph a -> a -> a -> Maybe [a]
 bfsSearch initialGraph start end
   | start == end = Just [start]
-  | otherwise = case bfsSearch' ([start], initialGraph, empty) of
-      Unsuccessful -> Nothing
-      Success preds -> Just (findSolution preds)
+  | otherwise = findSolution <$> bfsSearch' ([start], initialGraph, empty)
   where
     findSolution :: DiGraph a -> [a]
     findSolution predecessors = L.reverse (aux end)
@@ -92,7 +91,7 @@ bfsSearch initialGraph start end
           (x : _) -> node : aux x
 
     bfsSearch' :: SearchState a -> SearchResult a
-    bfsSearch' ([], _, _) = Unsuccessful
+    bfsSearch' ([], _, _) = Nothing
     bfsSearch' (frontier, graph, predecessors) =
       let graph' =
             -- Create a new graph with the frontier nodes removed
@@ -110,6 +109,35 @@ bfsSearch initialGraph start end
           frontier' = L.concatMap snd neighboursMap
        in if end `L.elem` frontier'
             then
-              Success predecessors
+              Just predecessors
             else
               bfsSearch' (frontier', graph', predecessors')
+
+type Path a = [a]
+
+type DfsSearchResult a = Either (DiGraph a) (Path a)
+
+dfsSearch :: forall a. (Eq a) => DiGraph a -> a -> a -> Maybe (Path a)
+dfsSearch initialGraph start end =
+  case dfsSearch' initialGraph start [] of
+    Right path -> Just path
+    Left _ -> Nothing
+  where
+    searchNeighbours :: [a] -> Path a -> DiGraph a -> DfsSearchResult a
+    searchNeighbours [] _ graph = Left graph
+    searchNeighbours (x : xs) path graph = case dfsSearch' graph x path of
+      -- If a path was found, just return it
+      Right path' -> Right path'
+      -- If no path was found, keep searching on the updated graph
+      Left graph' -> searchNeighbours xs path graph'
+
+    dfsSearch' :: DiGraph a -> a -> [a] -> DfsSearchResult a
+    dfsSearch' graph node path
+      | not (hasNode graph node) = Left graph -- If already visited
+      | node == end = Right path'
+      | otherwise =
+          let neighbours = children node graph -- Get neighbouring nodes
+              graph' = deleteNode node graph -- Mark node as visited
+           in searchNeighbours neighbours path' graph'
+      where
+        path' = path ++ [node] -- New path
